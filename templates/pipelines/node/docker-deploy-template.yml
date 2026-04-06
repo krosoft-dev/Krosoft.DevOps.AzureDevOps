@@ -111,7 +111,7 @@ stages:
                         sourceFolder: /tmp/deploy
                         contents: |
                           ${{ parameters.imageName }}.tar.gz
-                          docker-compose.${{ env }}.yml
+                          docker-compose.${{ lower(env) }}.yml
                         targetFolder: ${{ parameters.targetFolder }}
                         cleanTargetFolder: false
 
