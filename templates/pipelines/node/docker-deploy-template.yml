@@ -20,8 +20,8 @@ stages:
       - stage: Deploy_${{ replace(env,'-','_') }}_Stage
         displayName: Deploy '${{ replace(env,'-','_') }}'
         variables:
-          - template: vars/vars.yml@templates
-          - template: vars/vars_node.yml@templates
+          - template: ../../../vars/vars.yml@templates
+          - template: ../../../vars/vars_node.yml@templates
           - ${{ if ne(parameters.envVariablesFilePrefix, 'null') }}:
               - template: ${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml@self
         jobs:
@@ -76,8 +76,9 @@ stages:
                           -t ${{ parameters.imageName }}:$(Build.BuildId) \
                           /tmp/docker-build-context
 
+                        mkdir -p /tmp/deploy
                         docker save ${{ parameters.imageName }}:$(Build.BuildId) \
-                          | gzip > /tmp/${{ parameters.imageName }}.tar.gz
+                          | gzip > /tmp/deploy/${{ parameters.imageName }}.tar.gz
                       displayName: "Docker build & save"
 
                     - script: |
@@ -90,10 +91,10 @@ stages:
                         export DEPLOY_NETWORK="$(deploy_network)"
 
                         envsubst < $(templatesPath)/templates/docker/docker-compose.template.yml \
-                          > /tmp/docker-compose.${{ lower(env) }}.yml
+                          > /tmp/deploy/docker-compose.${{ lower(env) }}.yml
 
                         echo "--- docker-compose.${{ lower(env) }}.yml ---"
-                        cat /tmp/docker-compose.${{ lower(env) }}.yml
+                        cat /tmp/deploy/docker-compose.${{ lower(env) }}.yml
                       displayName: "Generate docker-compose.${{ lower(env) }}.yml"
 
                     - task: SSH@0
@@ -109,7 +110,7 @@ stages:
                       displayName: "Transfer files to server"
                       inputs:
                         sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
-                        sourceFolder: /tmp
+                        sourceFolder: /tmp/deploy
                         contents: |
                           ${{ parameters.imageName }}.tar.gz
                           docker-compose.${{ env }}.yml
