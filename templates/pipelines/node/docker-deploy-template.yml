@@ -94,6 +94,15 @@ stages:
                         cat /tmp/docker-compose.${{ lower(env) }}.yml
                       displayName: "Generate docker-compose.${{ lower(env) }}.yml"
 
+                    - task: SSH@0
+                      displayName: "Prepare target folder on server"
+                      inputs:
+                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
+                        runOptions: inline
+                        inline: |
+                          mkdir -p ${{ parameters.targetFolder }}
+                          chmod u+rwx ${{ parameters.targetFolder }}
+
                     - task: CopyFilesOverSSH@0
                       displayName: "Transfer files to server"
                       inputs:
