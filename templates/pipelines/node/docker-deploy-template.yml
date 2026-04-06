@@ -135,3 +135,8 @@ stages:
                           docker-compose -f $TARGET_DIR/docker-compose.${{  lower(env) }}.yml up -d --remove-orphans
 
                           echo "Application déployée sur :  ${{ env }}"
+
+                    - ${{ if ne(variables.check_url, 'null') }}:
+                        - template: ../../steps/check-url-template.yml
+                          parameters:
+                            url: ${{ variables.check_url }}

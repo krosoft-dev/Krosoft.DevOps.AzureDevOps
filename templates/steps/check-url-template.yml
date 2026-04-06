@@ -1,0 +1,37 @@
+parameters:
+  - name: url
+    type: string
+  - name: acceptableCodes
+    type: object
+    default: [200]
+
+steps:
+  - powershell: |
+      $url = "${{ parameters.url }}"
+      Write-Host "Testing URL: $url"
+
+      try {
+          $response = Invoke-WebRequest -Uri $url -UseBasicParsing -SkipHttpErrorCheck
+          
+          if ("${{ join(',', parameters.acceptableCodes) }}" -split "," -contains $response.StatusCode) {
+              Write-Host "URL returned acceptable HTTP code: $($response.StatusCode)"
+              
+              try {
+                  $jsonContent = $response.Content | ConvertFrom-Json
+                  Write-Host "JSON response:"
+                  Write-Host ($jsonContent | ConvertTo-Json -Depth 10)
+              }
+              catch {
+                  Write-Host "Response is not JSON"
+              }
+          }
+          else {
+              Write-Host "##vso[task.complete result=SucceededWithIssues;]"
+              Write-Host "##vso[task.logissue type=warning]URL returned unexpected HTTP code: $($response.StatusCode)"
+          }
+      }
+      catch {
+          Write-Host "##vso[task.complete result=SucceededWithIssues;]"
+          Write-Host "##vso[task.logissue type=warning]Failed to connect to URL: $_"
+      }
+    displayName: "Test URL and check response"
