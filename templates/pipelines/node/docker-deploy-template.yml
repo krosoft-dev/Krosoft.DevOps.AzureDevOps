@@ -39,6 +39,7 @@ stages:
                 deploy:
                   steps:
                     - checkout: templates
+                      path: s/templates
                     - checkout: self
                     - template: ../../steps/resolve-basepath-template.yml
                     - template: ../../steps/node/build-template.yml
@@ -57,8 +58,8 @@ stages:
                     - script: |
                         mkdir -p /tmp/docker-build-context
                         cp -r $(basePath)/dist                    /tmp/docker-build-context/dist
-                        cp $(Build.SourcesDirectory)/Krosoft.DevOps.AzureDevOps/templates/docker/Dockerfile  /tmp/docker-build-context/Dockerfile
-                        cp $(Build.SourcesDirectory)/Krosoft.DevOps.AzureDevOps/templates/docker/nginx.conf  /tmp/docker-build-context/nginx.conf
+                        cp $(Build.SourcesDirectory)/templates/templates/docker/Dockerfile  /tmp/docker-build-context/Dockerfile
+                        cp $(Build.SourcesDirectory)/templates/templates/docker/nginx.conf  /tmp/docker-build-context/nginx.conf
                       displayName: "Assemble docker build context"
 
                     - script: |
@@ -66,7 +67,7 @@ stages:
 
                         # Chargement des variables depuis le .env du repo templates
                         set -a
-                        source $(Build.SourcesDirectory)/Krosoft.DevOps.AzureDevOps/templates/docker/.env
+                        source $(Build.SourcesDirectory)/templates/templates/docker/.env
                         set +a
 
                         echo "→ NGINX_VERSION : $NGINX_VERSION"
