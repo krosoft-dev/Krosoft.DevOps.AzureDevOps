@@ -24,8 +24,8 @@ stages:
         displayName: Deploy '${{ replace(env,'-','_') }}'
 
         variables:
-          - ${{ if ne(parameters.prefixEnvVariablesFile, 'null') }}:
-              - template: ${{ parameters.prefixEnvVariablesFile }}-${{ lower(env) }}.yml@self
+          - ${{ if ne(parameters.envVariablesFilePrefix, 'null') }}:
+              - template: ${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml@self
               - name: currentTargetFolder
                 value: $(targetFolder)
               - name: currentCheckUrl
