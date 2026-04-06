@@ -23,8 +23,8 @@ stages:
           - ${{ if ne(parameters.envVariablesFilePrefix, 'null') }}:
               - template: ${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml@self
         jobs:
-          - deployment: Build_${{ replace(env,'-','_') }}
-            displayName: "Build"
+          - deployment: Deploy_${{ replace(env,'-','_') }}
+            displayName: "Build & Deploy"
             pool:
               name: ${{ parameters.pool }}
             workspace:
@@ -82,19 +82,17 @@ stages:
                         set -e
                         export IMAGE_NAME="${{ parameters.imageName }}"
                         export BUILD_ID="$(Build.BuildId)"
-                        export ENV_NAME="${{ env }}"
+                        export ENV_NAME="${{ lower(env) }}"
                         export TRAEFIK_HOST="$(traefik_host)"
-                        export TRAEFIK_PATH="$(traefik_path)"
-                        export API_URL="$(api_url)"
-                        export NODE_ENV="$(node_env)"
+                        export TRAEFIK_PATH="$(traefik_path)"                   
                         export NETWORK="$(network)"
 
                         envsubst < $(templatesPath)/templates/docker/docker-compose.template.yml \
-                          > /tmp/docker-compose.${{ env }}.yml
+                          > /tmp/docker-compose.${{ lower(env) }}.yml
 
-                        echo "--- docker-compose.${{ env }}.yml ---"
-                        cat /tmp/docker-compose.${{ env }}.yml
-                      displayName: "Generate docker-compose.${{ env }}.yml"
+                        echo "--- docker-compose.${{ lower(env) }}.yml ---"
+                        cat /tmp/docker-compose.${{ lower(env) }}.yml
+                      displayName: "Generate docker-compose.${{ lower(env) }}.yml"
 
                     - task: CopyFilesOverSSH@0
                       displayName: "Transfer files to server"
@@ -107,36 +105,23 @@ stages:
                         targetFolder: ${{ parameters.targetFolder }}
                         cleanTargetFolder: false
 
-          - job: Deploy_${{ replace(env,'-','_') }}
-            displayName: "Deploy"
-            dependsOn: Build_${{ replace(env,'-','_') }}
-            pool:
-              name: ${{ parameters.pool }}
-            steps:
-              - checkout: none
-              
-              - task: SSH@0
-                displayName: "Deploy ${{ env }} on server"
-                inputs:
-                  sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
-                  runOptions: inline
-                  inline: |
-                    set -e
+                    - task: SSH@0
+                      displayName: "Deploy ${{ env }} on server"
+                      inputs:
+                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
+                        runOptions: inline
+                        inline: |
+                          set -e
 
-                    TARGET_DIR="${{ parameters.targetFolder }}"
+                          TARGET_DIR="${{ parameters.targetFolder }}"
 
-                    echo "→ Chargement image Docker..."
-                    docker load < $TARGET_DIR/${{ parameters.imageName }}.tar.gz
+                          echo "→ Chargement image Docker..."
+                          docker load < $TARGET_DIR/${{ parameters.imageName }}.tar.gz
 
-                    echo "→ Nettoyage archive..."
-                    rm -f $TARGET_DIR/${{ parameters.imageName }}.tar.gz
+                          echo "→ Nettoyage archive..."
+                          rm -f $TARGET_DIR/${{ parameters.imageName }}.tar.gz
 
-                    echo "→ docker compose up..."
-                    docker compose -f $TARGET_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
+                          echo "→ docker compose up..."
+                          docker compose -f $TARGET_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
 
-                    echo "✓ ${{ env }} déployé"
-
-                # - ${{ if ne(variables.currentCheckUrl, 'null') }}:
-          #     - template: ../../steps/check-url-template.yml
-          #       parameters:
-          #         url: $(currentCheckUrl)
+                          echo "✓ ${{ env }} déployé"
