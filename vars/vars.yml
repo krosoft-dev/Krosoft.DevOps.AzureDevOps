@@ -1,6 +1,6 @@
 variables:
   # pipeline
-  poolName: "Tenor"
+  poolName: "Azure Pipelines"
 
   # build docker
   basePath: "$(Build.SourcesDirectory)/$(Build.Repository.Name)"

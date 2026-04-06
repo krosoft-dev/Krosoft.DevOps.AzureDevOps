@@ -22,11 +22,15 @@ stages:
       - job: BuildAndExport
         displayName: "Build dist + Docker image"
         steps:
+          - checkout: git://Krosoft.DevOps.AzureDevOps/Krosoft.DevOps.AzureDevOps
           - checkout: self
-            displayName: "Checkout repo projet"
+          - template: ../../steps/resolve-basepath-template.yml
 
-          - checkout: templates
-            displayName: "Checkout repo templates"
+          - script: ls -la $(Build.SourcesDirectory)
+            displayName: "Check sources directory"
+
+          - script: ls -la ${{ parameters.workingDirectory }}
+            displayName: "Check working directory"
 
           - task: NodeTool@0
             displayName: "Setup Node ${{ parameters.nodeVersion }}"

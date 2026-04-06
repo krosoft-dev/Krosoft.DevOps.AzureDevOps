@@ -1,0 +1,9 @@
+steps:
+  - script: |
+      if [ "$(Build.Repository.Provider)" = "GitHub" ] || [ "$(Build.Repository.Provider)" = "GitHubEnterprise" ]; then
+        REPO_NAME=$(basename "$(Build.Repository.Name)")
+      else
+        REPO_NAME="$(Build.Repository.Name)"
+      fi
+      echo "##vso[task.setvariable variable=basePath]$(Build.SourcesDirectory)/$REPO_NAME"
+    displayName: "Resolve basePath"
