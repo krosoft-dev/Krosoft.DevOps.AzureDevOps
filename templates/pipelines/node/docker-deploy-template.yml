@@ -20,8 +20,6 @@ stages:
       - stage: Deploy_${{ replace(env,'-','_') }}_Stage
         displayName: Deploy '${{ replace(env,'-','_') }}'
         variables:
-          - template: ../../../vars/vars.yml@templates
-          - template: ../../../vars/vars_node.yml@templates
           - ${{ if ne(parameters.envVariablesFilePrefix, 'null') }}:
               - template: ${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml@self
         jobs:
