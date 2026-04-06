@@ -8,11 +8,11 @@ parameters:
     default: "."
 
 steps:
-  - script: ls -la $(Build.SourcesDirectory)
-    displayName: "Check sources directory"
+  # - script: ls -la $(Build.SourcesDirectory)
+  #   displayName: "Check sources directory"
 
-  - script: ls -la ${{ parameters.workingDirectory }}
-    displayName: "Check working directory"
+  # - script: ls -la ${{ parameters.workingDirectory }}
+  #   displayName: "Check working directory"
 
   - task: NodeTool@0
     displayName: "Use Node.js ${{ parameters.nodeVersion }}"
@@ -23,8 +23,8 @@ steps:
     displayName: Install dependencies
     workingDirectory: ${{ parameters.workingDirectory }}
 
-  - script: ls -la ${{ parameters.workingDirectory }}/node_modules
-    displayName: "Check node_modules directory"
+  # - script: ls -la ${{ parameters.workingDirectory }}/node_modules
+  #   displayName: "Check node_modules directory"
 
   - script: node node_modules/vite/bin/vite.js build --mode=${{ parameters.buildMode }}
     displayName: Build '${{ parameters.buildMode }}' version

@@ -47,6 +47,46 @@ stages:
                         workingDirectory: $(basePath)
                         buildMode: ${{ lower(env) }}
 
+                    - script: |
+                        mkdir -p /tmp/docker-build-context
+                        cp -r $(Build.SourcesDirectory)/self/dist                    /tmp/docker-build-context/dist
+                        cp $(Build.SourcesDirectory)/templates/templates/Dockerfile  /tmp/docker-build-context/Dockerfile
+                        cp $(Build.SourcesDirectory)/templates/templates/nginx.conf  /tmp/docker-build-context/nginx.conf
+                      displayName: "Assemble docker build context"
+
+                    - script: |
+                        set -e
+
+                        # Chargement des variables depuis le .env du repo templates
+                        set -a
+                        source $(Build.SourcesDirectory)/templates/templates/.env
+                        set +a
+
+                        echo "→ NGINX_VERSION : $NGINX_VERSION"
+                        echo "→ TZ          : $TZ"
+
+                        docker build \
+                          --build-arg NGINX_VERSION="$NGINX_VERSION" \
+                          --build-arg TZ="$TZ" \
+                          -t ${{ parameters.imageName }}:$(Build.BuildId) \
+                          /tmp/docker-build-context
+
+                        docker save ${{ parameters.imageName }}:$(Build.BuildId) \
+                          | gzip > $(Build.ArtifactStagingDirectory)/${{ parameters.imageName }}.tar.gz
+                      displayName: "Docker build & save"
+
+                    - publish: $(Build.ArtifactStagingDirectory)/${{ parameters.imageName }}.tar.gz
+                      artifact: docker-image
+                      displayName: "Publish image artifact"
+
+                    - publish: $(Build.SourcesDirectory)/self/deploy
+                      artifact: deploy-config
+                      displayName: "Publish deploy configs"
+
+                    - publish: $(Build.SourcesDirectory)/self/docker-compose.template.yml
+                      artifact: compose-template
+                      displayName: "Publish compose template"
+
                     # - template: ../../steps/ssh/deploy-dist-template.yml
                     #   parameters:
                     #     sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
