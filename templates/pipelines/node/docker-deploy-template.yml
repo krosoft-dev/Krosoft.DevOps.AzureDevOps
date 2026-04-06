@@ -41,7 +41,7 @@ stages:
               runOnce:
                 deploy:
                   steps:
-                    - checkout: git://Infrastructure/Infrastructure.DevOps
+                    - checkout: git://Krosoft.DevOps.AzureDevOps/Krosoft.DevOps.AzureDevOps
                     - checkout: self
                     - template: ../../steps/resolve-basepath-template.yml
                     - template: ../../steps/node/build-template.yml
