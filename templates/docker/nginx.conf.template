@@ -2,9 +2,6 @@ server {
     listen 80;
     server_name _;
 
-    root /usr/share/nginx/html;
-    index index.html;
-
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
@@ -14,13 +11,9 @@ server {
         add_header Content-Type text/plain;
     }
 
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        try_files $uri =404;
-    }
-
-    location / {
-        try_files $uri $uri/ /index.html;
+    location ${APP_BASE_PATH} {
+        alias /usr/share/nginx/html/;
+        index index.html;
+        try_files $uri ${APP_BASE_PATH}index.html;
     }
 }

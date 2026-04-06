@@ -43,6 +43,7 @@ stages:
                         nodeVersion: ${{ parameters.nodeVersion }}
                         workingDirectory: $(basePath)
                         buildMode: ${{ lower(env) }}
+                        viteBase: $(deploy_path)
 
                     - script: ls -la $(Build.SourcesDirectory)
                       displayName: "Check sources directory"
@@ -52,9 +53,9 @@ stages:
 
                     - script: |
                         mkdir -p /tmp/docker-build-context
-                        cp -r $(basePath)/dist                                /tmp/docker-build-context/dist
-                        cp $(templatesPath)/templates/docker/Dockerfile       /tmp/docker-build-context/Dockerfile
-                        cp $(templatesPath)/templates/docker/nginx.conf       /tmp/docker-build-context/nginx.conf
+                        cp -r $(basePath)/dist                                        /tmp/docker-build-context/dist
+                        cp $(templatesPath)/templates/docker/Dockerfile               /tmp/docker-build-context/Dockerfile
+                        cp $(templatesPath)/templates/docker/nginx.conf.template      /tmp/docker-build-context/nginx.conf.template
                       displayName: "Assemble docker build context"
 
                     - script: |
@@ -71,6 +72,7 @@ stages:
                         docker build \
                           --build-arg NGINX_VERSION="$NGINX_VERSION" \
                           --build-arg TZ="$TZ" \
+                          --build-arg APP_BASE_PATH="$(deploy_path)" \
                           -t ${{ parameters.imageName }}:$(Build.BuildId) \
                           /tmp/docker-build-context
 

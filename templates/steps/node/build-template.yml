@@ -6,6 +6,9 @@ parameters:
   - name: workingDirectory
     type: string
     default: "."
+  - name: viteBase
+    type: string
+    default: "/"
 
 steps:
   # - script: ls -la $(Build.SourcesDirectory)
@@ -27,6 +30,6 @@ steps:
   #   displayName: "Check node_modules directory"
 
   # - script: node node_modules/vite/bin/vite.js build --mode=${{ parameters.buildMode }}
-  - script: npm run build -- --mode=${{ parameters.buildMode }}
+  - script: npm run build -- --mode=${{ parameters.buildMode }} --base=${{ parameters.viteBase }}
     displayName: Build '${{ parameters.buildMode }}' version
     workingDirectory: ${{ parameters.workingDirectory }}
