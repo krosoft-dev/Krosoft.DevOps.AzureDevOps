@@ -1,0 +1,28 @@
+parameters:
+  - name: nodeVersion
+    type: string
+  - name: buildMode
+    type: string
+  - name: workingDirectory
+    type: string
+    default: "."
+
+steps:
+  - script: ls -la $(Build.SourcesDirectory)
+    displayName: "Check sources directory"
+
+  - script: ls -la ${{ parameters.workingDirectory }}
+    displayName: "Check working directory"
+
+  - task: NodeTool@0
+    displayName: "Use Node.js ${{ parameters.nodeVersion }}"
+    inputs:
+      versionSpec: ${{ parameters.nodeVersion }}
+
+  - script: npm ci
+    displayName: Install dependencies
+    workingDirectory: ${{ parameters.workingDirectory }}
+
+  - script: npm run build -- --mode=${{ parameters.buildMode }}
+    displayName: Build (${{ parameters.buildMode }})
+    workingDirectory: ${{ parameters.workingDirectory }}
