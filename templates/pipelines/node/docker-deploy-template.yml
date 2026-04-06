@@ -49,7 +49,7 @@ stages:
 
                     - script: |
                         mkdir -p /tmp/docker-build-context
-                        cp -r $(Build.SourcesDirectory)/self/dist                    /tmp/docker-build-context/dist
+                        cp -r $(basePath)/dist                    /tmp/docker-build-context/dist
                         cp $(Build.SourcesDirectory)/templates/templates/Dockerfile  /tmp/docker-build-context/Dockerfile
                         cp $(Build.SourcesDirectory)/templates/templates/nginx.conf  /tmp/docker-build-context/nginx.conf
                       displayName: "Assemble docker build context"
@@ -79,11 +79,11 @@ stages:
                       artifact: docker-image
                       displayName: "Publish image artifact"
 
-                    - publish: $(Build.SourcesDirectory)/self/deploy
+                    - publish: $(basePath)/deploy
                       artifact: deploy-config
                       displayName: "Publish deploy configs"
 
-                    - publish: $(Build.SourcesDirectory)/self/docker-compose.template.yml
+                    - publish: $(basePath)/docker-compose.template.yml
                       artifact: compose-template
                       displayName: "Publish compose template"
 
