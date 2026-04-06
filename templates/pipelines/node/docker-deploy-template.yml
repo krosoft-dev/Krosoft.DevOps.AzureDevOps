@@ -132,6 +132,6 @@ stages:
                           rm -f $TARGET_DIR/${{ parameters.imageName }}.tar.gz
 
                           echo "→ docker compose up..."
-                          docker compose -f $TARGET_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
+                          docker-compose -f $TARGET_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
 
                           echo "✓ ${{ env }} déployé"
