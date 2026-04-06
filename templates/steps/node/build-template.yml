@@ -29,7 +29,6 @@ steps:
   # - script: ls -la ${{ parameters.workingDirectory }}/node_modules
   #   displayName: "Check node_modules directory"
 
-  # - script: node node_modules/vite/bin/vite.js build --mode=${{ parameters.buildMode }}
   - script: npm run build -- --mode=${{ parameters.buildMode }} --base=${{ parameters.viteBase }}
     displayName: Build '${{ parameters.buildMode }}' version
     workingDirectory: ${{ parameters.workingDirectory }}
