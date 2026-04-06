@@ -24,7 +24,7 @@ stages:
         steps:
           - checkout: git://Krosoft.DevOps.AzureDevOps/Krosoft.DevOps.AzureDevOps
           - checkout: self
-          - template: ../../steps/resolve-basepath-template.yml
+          - template: ../steps/resolve-basepath-template.yml
 
           - script: ls -la $(Build.SourcesDirectory)
             displayName: "Check sources directory"
