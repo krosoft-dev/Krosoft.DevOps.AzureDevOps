@@ -48,11 +48,10 @@ stages:
                         workingDirectory: $(basePath)
                         buildMode: ${{ lower(env) }}
 
-
                     - script: ls -la $(Build.SourcesDirectory)
                       displayName: "Check sources directory"
 
-                    - script: ls -la $(basePath)/dist  
+                    - script: ls -la $(basePath)/dist
                       displayName: "Check working directory"
 
                     - script: |
@@ -106,39 +105,29 @@ stages:
                     #       parameters:
                     #         url: $(currentCheckUrl)
 
- 
- 
       - stage: Deploy
         displayName: Deploy '${{ replace(env,'-','_') }}'
         dependsOn: Build_${{ replace(env,'-','_') }}_Stage
         jobs:
-          - ${{ each env in parameters.environments }}:
-              - job: Deploy_${{ env }}
-                displayName: "Deploy → ${{ env }}"
-                steps:
-                  - checkout: none
+          - job: Deploy_${{ env }}
+            displayName: "Deploy → ${{ env }}"
+            steps:
+              - checkout: none
 
-                  - download: current
-                    artifact: docker-image
-                    displayName: "Download image artifact"
-      
-                  - download: current
-                    artifact: deploy-config
-                    displayName: "Download deploy config"
-      
-                  - download: current
-                    artifact: compose-template
-                    displayName: "Download compose template"
-      
-                  - script: pip install yq --quiet
-                    displayName: "Install yq"
-      
+              - download: current
+                artifact: docker-image
+                displayName: "Download image artifact"
 
+              - download: current
+                artifact: deploy-config
+                displayName: "Download deploy config"
 
+              - download: current
+                artifact: compose-template
+                displayName: "Download compose template"
 
-
-
-
+              - script: pip install yq --quiet
+                displayName: "Install yq"
 
 # stages:
 #   - stage: Build
