@@ -1,22 +1,19 @@
 parameters:
-  - name: environments
+  - name: pool
     type: object
-    default: []
-
+  - name: sshEndpointPrefix
+    type: string
+  - name: envVariablesFilePrefix
+    type: string
+    default: null
+  - name: targetFolder
+    type: string
   - name: imageName
     type: string
-
   - name: nodeVersion
-    type: string
-    default: "20.x"
-
-  - name: sshServiceConnection
     type: string
 
 stages:
-  # ---------------------------------------------------------------
-  # STAGE 1 : Build dist + construction et export de l'image Docker
-  # ---------------------------------------------------------------
   - stage: Build
     displayName: "Build & Export"
     jobs:
@@ -78,88 +75,86 @@ stages:
             artifact: compose-template
             displayName: "Publish compose template"
 
-  # ---------------------------------------------------------------
-  # STAGE 2 : Déploiement par env (jobs parallèles)
-  # ---------------------------------------------------------------
-  - stage: Deploy
-    displayName: "Deploy"
-    dependsOn: Build
-    jobs:
-      - ${{ each env in parameters.environments }}:
-          - job: Deploy_${{ env }}
-            displayName: "Deploy → ${{ env }}"
-            steps:
-              - checkout: none
+ 
+  # - stage: Deploy
+  #   displayName: "Deploy"
+  #   dependsOn: Build
+  #   jobs:
+  #     - ${{ each env in parameters.environments }}:
+  #         - job: Deploy_${{ env }}
+  #           displayName: "Deploy → ${{ env }}"
+  #           steps:
+  #             - checkout: none
 
-              - download: current
-                artifact: docker-image
-                displayName: "Download image artifact"
+  #             - download: current
+  #               artifact: docker-image
+  #               displayName: "Download image artifact"
 
-              - download: current
-                artifact: deploy-config
-                displayName: "Download deploy config"
+  #             - download: current
+  #               artifact: deploy-config
+  #               displayName: "Download deploy config"
 
-              - download: current
-                artifact: compose-template
-                displayName: "Download compose template"
+  #             - download: current
+  #               artifact: compose-template
+  #               displayName: "Download compose template"
 
-              - script: pip install yq --quiet
-                displayName: "Install yq"
+  #             - script: pip install yq --quiet
+  #               displayName: "Install yq"
 
-              - script: |
-                  set -e
+  #             - script: |
+  #                 set -e
 
-                  CONFIG="$(Pipeline.Workspace)/deploy-config/${{ env }}.yml"
+  #                 CONFIG="$(Pipeline.Workspace)/deploy-config/${{ env }}.yml"
 
-                  if [ ! -f "$CONFIG" ]; then
-                    echo "❌ Fichier de config introuvable : $CONFIG"
-                    exit 1
-                  fi
+  #                 if [ ! -f "$CONFIG" ]; then
+  #                   echo "❌ Fichier de config introuvable : $CONFIG"
+  #                   exit 1
+  #                 fi
 
-                  export IMAGE_NAME="${{ parameters.imageName }}"
-                  export BUILD_ID="$(Build.BuildId)"
-                  export ENV_NAME="${{ env }}"
-                  export TRAEFIK_HOST=$(yq e '.traefik_host' "$CONFIG")
-                  export TRAEFIK_PATH=$(yq e '.traefik_path' "$CONFIG")
-                  export API_URL=$(yq e '.api_url' "$CONFIG")
-                  export NODE_ENV=$(yq e '.node_env' "$CONFIG")
-                  export NETWORK=$(yq e '.network' "$CONFIG")
+  #                 export IMAGE_NAME="${{ parameters.imageName }}"
+  #                 export BUILD_ID="$(Build.BuildId)"
+  #                 export ENV_NAME="${{ env }}"
+  #                 export TRAEFIK_HOST=$(yq e '.traefik_host' "$CONFIG")
+  #                 export TRAEFIK_PATH=$(yq e '.traefik_path' "$CONFIG")
+  #                 export API_URL=$(yq e '.api_url' "$CONFIG")
+  #                 export NODE_ENV=$(yq e '.node_env' "$CONFIG")
+  #                 export NETWORK=$(yq e '.network' "$CONFIG")
 
-                  envsubst < $(Pipeline.Workspace)/compose-template/docker-compose.template.yml \
-                    > $(Pipeline.Workspace)/docker-compose.${{ env }}.yml
+  #                 envsubst < $(Pipeline.Workspace)/compose-template/docker-compose.template.yml \
+  #                   > $(Pipeline.Workspace)/docker-compose.${{ env }}.yml
 
-                  echo "--- docker-compose.${{ env }}.yml généré ---"
-                  cat $(Pipeline.Workspace)/docker-compose.${{ env }}.yml
-                displayName: "Generate docker-compose.${{ env }}.yml"
+  #                 echo "--- docker-compose.${{ env }}.yml généré ---"
+  #                 cat $(Pipeline.Workspace)/docker-compose.${{ env }}.yml
+  #               displayName: "Generate docker-compose.${{ env }}.yml"
 
-              - task: CopyFilesOverSSH@0
-                displayName: "Transfer files to server"
-                inputs:
-                  sshEndpoint: ${{ parameters.sshServiceConnection }}
-                  sourceFolder: $(Pipeline.Workspace)
-                  contents: |
-                    docker-image/${{ parameters.imageName }}.tar.gz
-                    docker-compose.${{ env }}.yml
-                  targetFolder: /tmp/deploy-${{ parameters.imageName }}-${{ env }}
-                  cleanTargetFolder: true
+  #             - task: CopyFilesOverSSH@0
+  #               displayName: "Transfer files to server"
+  #               inputs:
+  #                 sshEndpoint: ${{ parameters.sshServiceConnection }}
+  #                 sourceFolder: $(Pipeline.Workspace)
+  #                 contents: |
+  #                   docker-image/${{ parameters.imageName }}.tar.gz
+  #                   docker-compose.${{ env }}.yml
+  #                 targetFolder: /tmp/deploy-${{ parameters.imageName }}-${{ env }}
+  #                 cleanTargetFolder: true
 
-              - task: SSH@0
-                displayName: "Deploy ${{ env }} on server"
-                inputs:
-                  sshEndpoint: ${{ parameters.sshServiceConnection }}
-                  runOptions: inline
-                  inline: |
-                    set -e
+  #             - task: SSH@0
+  #               displayName: "Deploy ${{ env }} on server"
+  #               inputs:
+  #                 sshEndpoint: ${{ parameters.sshServiceConnection }}
+  #                 runOptions: inline
+  #                 inline: |
+  #                   set -e
 
-                    DEPLOY_DIR="/tmp/deploy-${{ parameters.imageName }}-${{ env }}"
+  #                   DEPLOY_DIR="/tmp/deploy-${{ parameters.imageName }}-${{ env }}"
 
-                    echo "→ Chargement image Docker..."
-                    docker load < $DEPLOY_DIR/docker-image/${{ parameters.imageName }}.tar.gz
+  #                   echo "→ Chargement image Docker..."
+  #                   docker load < $DEPLOY_DIR/docker-image/${{ parameters.imageName }}.tar.gz
 
-                    echo "→ docker compose up..."
-                    docker compose -f $DEPLOY_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
+  #                   echo "→ docker compose up..."
+  #                   docker compose -f $DEPLOY_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
 
-                    echo "→ Nettoyage..."
-                    rm -rf $DEPLOY_DIR
+  #                   echo "→ Nettoyage..."
+  #                   rm -rf $DEPLOY_DIR
 
-                    echo "✓ ${{ env }} déployé"
+  #                   echo "✓ ${{ env }} déployé"
