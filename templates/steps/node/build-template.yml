@@ -22,6 +22,8 @@ steps:
   - script: npm ci
     displayName: Install dependencies
     workingDirectory: ${{ parameters.workingDirectory }}
+    env:
+      NODE_ENV: ${{ parameters.buildMode }}
 
   - script: npm run build -- --mode=${{ parameters.buildMode }}
     displayName: Build '${{ parameters.buildMode }}' version
