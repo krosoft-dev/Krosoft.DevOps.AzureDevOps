@@ -17,8 +17,8 @@ parameters:
 
 stages:
   - ${{ each env in parameters.environments }}:
-      - stage: Deploy_${{ replace(env,'-','_') }}_Stage
-        displayName: Deploy '${{ replace(env,'-','_') }}'
+      - stage: Build_${{ replace(env,'-','_') }}_Stage
+        displayName: Build '${{ replace(env,'-','_') }}'
 
         variables:
           - ${{ if ne(parameters.envVariablesFilePrefix, 'null') }}:
@@ -28,7 +28,7 @@ stages:
               - name: currentCheckUrl
                 value: $(checkUrl)
         jobs:
-          - deployment: Deploy_${{ replace(env,'-','_') }}
+          - deployment: Build_${{ replace(env,'-','_') }}
             pool:
               name: ${{ parameters.pool }}
             workspace:
@@ -87,9 +87,9 @@ stages:
                       artifact: docker-image
                       displayName: "Publish image artifact"
 
-                    - publish: $(basePath)/deploy
-                      artifact: deploy-config
-                      displayName: "Publish deploy configs"
+                    # - publish: $(basePath)/deploy
+                    #   artifact: deploy-config
+                    #   displayName: "Publish deploy configs"
 
                     - publish: $(basePath)/docker-compose.template.yml
                       artifact: compose-template
@@ -105,6 +105,40 @@ stages:
                     #     - template: ../../steps/check-url-template.yml
                     #       parameters:
                     #         url: $(currentCheckUrl)
+
+ 
+ 
+      - stage: Deploy
+        displayName: Deploy '${{ replace(env,'-','_') }}'
+        dependsOn: Build_${{ replace(env,'-','_') }}_Stage
+        jobs:
+          - ${{ each env in parameters.environments }}:
+              - job: Deploy_${{ env }}
+                displayName: "Deploy → ${{ env }}"
+                steps:
+                  - checkout: none
+
+                  - download: current
+                    artifact: docker-image
+                    displayName: "Download image artifact"
+      
+                  - download: current
+                    artifact: deploy-config
+                    displayName: "Download deploy config"
+      
+                  - download: current
+                    artifact: compose-template
+                    displayName: "Download compose template"
+      
+                  - script: pip install yq --quiet
+                    displayName: "Install yq"
+      
+
+
+
+
+
+
 
 # stages:
 #   - stage: Build
