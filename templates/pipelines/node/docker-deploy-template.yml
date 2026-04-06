@@ -154,8 +154,8 @@ stages:
                   contents: |
                     docker-image/${{ parameters.imageName }}.tar.gz
                     docker-compose.${{ env }}.yml
-                  targetFolder: /tmp/deploy-${{ parameters.imageName }}-${{ env }}
-                  cleanTargetFolder: true
+                  targetFolder: ${{ parameters.targetFolder }}
+                  cleanTargetFolder: false
 
               - task: SSH@0
                 displayName: "Deploy ${{ env }} on server"
@@ -165,16 +165,16 @@ stages:
                   inline: |
                     set -e
 
-                    DEPLOY_DIR="/tmp/deploy-${{ parameters.imageName }}-${{ env }}"
+                    TARGET_DIR="${{ parameters.targetFolder }}"
 
                     echo "→ Chargement image Docker..."
-                    docker load < $DEPLOY_DIR/docker-image/${{ parameters.imageName }}.tar.gz
+                    docker load < $TARGET_DIR/docker-image/${{ parameters.imageName }}.tar.gz
+
+                    echo "→ Nettoyage archive..."
+                    rm -f $TARGET_DIR/docker-image/${{ parameters.imageName }}.tar.gz
 
                     echo "→ docker compose up..."
-                    docker compose -f $DEPLOY_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
-
-                    echo "→ Nettoyage..."
-                    rm -rf $DEPLOY_DIR
+                    docker compose -f $TARGET_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
 
                     echo "✓ ${{ env }} déployé"
 
