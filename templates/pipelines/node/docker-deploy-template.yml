@@ -86,24 +86,13 @@ stages:
                       artifact: docker-image
                       displayName: "Publish image artifact"
 
-                    # - publish: $(basePath)/deploy
-                    #   artifact: deploy-config
-                    #   displayName: "Publish deploy configs"
+                    - publish: $(basePath)/${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml
+                      artifact: deploy-config
+                      displayName: "Publish deploy configs"
 
                     - publish: $(templatesPath)/templates/docker/docker-compose.template.yml
                       artifact: compose-template
                       displayName: "Publish compose template"
-
-                    # - template: ../../steps/ssh/deploy-dist-template.yml
-                    #   parameters:
-                    #     sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
-                    #     targetFolder: $(currentTargetFolder)
-                    #     sourceFolder: $(basePath)/dist
-
-                    # - ${{ if ne(variables.currentCheckUrl, 'null') }}:
-                    #     - template: ../../steps/check-url-template.yml
-                    #       parameters:
-                    #         url: $(currentCheckUrl)
 
       - stage: Deploy
         displayName: Deploy '${{ replace(env,'-','_') }}'
@@ -128,6 +117,78 @@ stages:
 
               - script: pip install yq --quiet
                 displayName: "Install yq"
+
+              - script: |
+                  set -e
+
+                  
+
+                  CONFIG="$(Pipeline.Workspace)/deploy-config/${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml"
+
+                  if [ ! -f "$CONFIG" ]; then
+                    echo "❌ Fichier de config introuvable : $CONFIG"
+                    exit 1
+                  fi
+
+                  export IMAGE_NAME="${{ parameters.imageName }}"
+                  export BUILD_ID="$(Build.BuildId)"
+                  export ENV_NAME="${{ env }}"
+                  export TRAEFIK_HOST=$(yq e '.traefik_host' "$CONFIG")
+                  export TRAEFIK_PATH=$(yq e '.traefik_path' "$CONFIG")
+                  export API_URL=$(yq e '.api_url' "$CONFIG")
+                  export NODE_ENV=$(yq e '.node_env' "$CONFIG")
+                  export NETWORK=$(yq e '.network' "$CONFIG")
+
+                  envsubst < $(Pipeline.Workspace)/compose-template/docker-compose.template.yml \
+                    > $(Pipeline.Workspace)/docker-compose.${{ env }}.yml
+
+                  echo "--- docker-compose.${{ env }}.yml généré ---"
+                  cat $(Pipeline.Workspace)/docker-compose.${{ env }}.yml
+                displayName: "Generate docker-compose.${{ env }}.yml"
+
+              - task: CopyFilesOverSSH@0
+                displayName: "Transfer files to server"
+                inputs:
+                  sshEndpoint: ${{ parameters.sshServiceConnection }}
+                  sourceFolder: $(Pipeline.Workspace)
+                  contents: |
+                    docker-image/${{ parameters.imageName }}.tar.gz
+                    docker-compose.${{ env }}.yml
+                  targetFolder: /tmp/deploy-${{ parameters.imageName }}-${{ env }}
+                  cleanTargetFolder: true
+
+              - task: SSH@0
+                displayName: "Deploy ${{ env }} on server"
+                inputs:
+                  sshEndpoint: ${{ parameters.sshServiceConnection }}
+                  runOptions: inline
+                  inline: |
+                    set -e
+
+                    DEPLOY_DIR="/tmp/deploy-${{ parameters.imageName }}-${{ env }}"
+
+                    echo "→ Chargement image Docker..."
+                    docker load < $DEPLOY_DIR/docker-image/${{ parameters.imageName }}.tar.gz
+
+                    echo "→ docker compose up..."
+                    docker compose -f $DEPLOY_DIR/docker-compose.${{ env }}.yml up -d --remove-orphans
+
+                    echo "→ Nettoyage..."
+                    rm -rf $DEPLOY_DIR
+
+                    echo "✓ ${{ env }} déployé"
+
+
+
+
+
+
+
+
+                         # - ${{ if ne(variables.currentCheckUrl, 'null') }}:
+                    #     - template: ../../steps/check-url-template.yml
+                    #       parameters:
+                    #         url: $(currentCheckUrl)
 
 # stages:
 #   - stage: Build
