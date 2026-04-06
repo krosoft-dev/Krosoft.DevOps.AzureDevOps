@@ -90,7 +90,7 @@ stages:
                     #   artifact: deploy-config
                     #   displayName: "Publish deploy configs"
 
-                    - publish: $(basePath)/docker-compose.template.yml
+                    - publish: $(templatesPath)/templates/docker/docker-compose.template.yml
                       artifact: compose-template
                       displayName: "Publish compose template"
 
