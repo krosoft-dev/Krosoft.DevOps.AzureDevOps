@@ -47,6 +47,13 @@ stages:
                         workingDirectory: $(basePath)
                         buildMode: ${{ lower(env) }}
 
+
+                    - script: ls -la $(Build.SourcesDirectory)
+                      displayName: "Check sources directory"
+
+                    - script: ls -la $(basePath)/dist  
+                      displayName: "Check working directory"
+
                     - script: |
                         mkdir -p /tmp/docker-build-context
                         cp -r $(basePath)/dist                    /tmp/docker-build-context/dist
