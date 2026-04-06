@@ -19,7 +19,7 @@ steps:
     inputs:
       versionSpec: ${{ parameters.nodeVersion }}
 
-  - script: npm ci
+  - script: npm ci --include=dev
     displayName: Install dependencies
     workingDirectory: ${{ parameters.workingDirectory }}
 
