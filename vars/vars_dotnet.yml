@@ -1,0 +1,5 @@
+variables:
+  # build projets
+  dotNetVersion: "9.0.x"
+  buildProjects: "$(basePath)/**/*.csproj"
+  testProjects: "$(basePath)/tests/**/*.csproj"

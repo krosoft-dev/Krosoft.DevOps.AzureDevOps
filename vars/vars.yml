@@ -1,0 +1,10 @@
+variables:
+  # pipeline
+  poolName: "Tenor"
+
+  # build docker
+  basePath: "$(Build.SourcesDirectory)/$(Build.Repository.Name)"
+  remoteBasePath: "/apps"
+
+  # déploiement
+  artifactName: "output"
