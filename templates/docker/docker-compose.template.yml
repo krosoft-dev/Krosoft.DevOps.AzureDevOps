@@ -2,7 +2,7 @@ services:
   ${IMAGE_NAME}-${ENV_NAME}:
     image: ${IMAGE_NAME}:${BUILD_ID}
     restart: unless-stopped
-     labels:
+    labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${IMAGE_NAME}-${ENV_NAME}.rule=Host(`${DEPLOY_HOST}`) && PathPrefix(`${DEPLOY_PATH}`)"
       - "traefik.http.services.${IMAGE_NAME}-${ENV_NAME}.loadbalancer.server.port=80"
