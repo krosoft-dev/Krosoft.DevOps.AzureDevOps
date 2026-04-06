@@ -22,8 +22,9 @@ steps:
   - script: npm ci
     displayName: Install dependencies
     workingDirectory: ${{ parameters.workingDirectory }}
-    env:
-      NODE_ENV: development
+
+  - script: ls -la ${{ parameters.workingDirectory }}/node_modules
+    displayName: "Check working directory"
 
   - script: npm run build -- --mode=${{ parameters.buildMode }}
     displayName: Build '${{ parameters.buildMode }}' version
