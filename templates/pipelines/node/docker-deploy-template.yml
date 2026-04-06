@@ -15,9 +15,6 @@ parameters:
   - name: nodeVersion
     type: string
 
-
-
-
 stages:
   - ${{ each env in parameters.environments }}:
       - stage: Deploy_${{ replace(env,'-','_') }}_Stage
@@ -61,17 +58,6 @@ stages:
                     #       parameters:
                     #         url: $(currentCheckUrl)
 
-
-
-
-
-
-
-
-
-
-
-
 # stages:
 #   - stage: Build
 #     displayName: "Build & Export"
@@ -88,7 +74,6 @@ stages:
 #                 nodeVersion: ${{ parameters.nodeVersion }}
 #                 workingDirectory: $(basePath)
 #                 buildMode: ${{ lower(env) }}
-
 
 #           # - template: ../steps/resolve-basepath-template.yml
 
