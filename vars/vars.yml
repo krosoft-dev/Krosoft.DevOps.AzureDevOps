@@ -8,4 +8,4 @@ variables:
   remoteBasePath: "/apps"
 
   # déploiement
-  artifactName: "output"
+  deploy_network: traefik-network
