@@ -23,7 +23,7 @@ steps:
     displayName: Install dependencies
     workingDirectory: ${{ parameters.workingDirectory }}
     env:
-      NODE_ENV: ${{ parameters.buildMode }}
+      NODE_ENV: development
 
   - script: npm run build -- --mode=${{ parameters.buildMode }}
     displayName: Build '${{ parameters.buildMode }}' version
