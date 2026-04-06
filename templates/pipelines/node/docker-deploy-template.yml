@@ -120,6 +120,8 @@ stages:
                       inputs:
                         sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
                         runOptions: inline
+                        readyTimeout: "20000"
+                        failOnStdErr: false
                         inline: |
                           set -e
 
@@ -132,9 +134,12 @@ stages:
                           rm -f $TARGET_DIR/${{ parameters.imageName }}.tar.gz
 
                           echo "→ docker compose up..."
-                          docker-compose -f $TARGET_DIR/docker-compose.${{  lower(env) }}.yml up -d --remove-orphans
+                          docker-compose \
+                            -p ${{ parameters.imageName }}-${{ lower(env) }} \
+                            -f $TARGET_DIR/docker-compose.${{ lower(env) }}.yml \
+                            up -d --remove-orphans
 
-                          echo "Application déployée sur :  ${{ env }}"
+                          echo "Application déployée avec succès sur ${{ env }} !"
 
                     - ${{ if ne(variables.check_url, 'null') }}:
                         - template: ../../steps/check-url-template.yml
