@@ -99,7 +99,7 @@ stages:
                     - task: CopyFilesOverSSH@0
                       displayName: "Transfer files to server"
                       inputs:
-                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}-${{ lower(env) }}
+                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
                         sourceFolder: /tmp
                         contents: |
                           ${{ parameters.imageName }}.tar.gz
@@ -118,7 +118,7 @@ stages:
               - task: SSH@0
                 displayName: "Deploy ${{ env }} on server"
                 inputs:
-                  sshEndpoint: ${{ parameters.sshEndpointPrefix }}-${{ lower(env) }}
+                  sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
                   runOptions: inline
                   inline: |
                     set -e
