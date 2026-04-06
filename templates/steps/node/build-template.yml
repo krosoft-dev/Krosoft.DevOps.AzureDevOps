@@ -26,6 +26,8 @@ steps:
   - script: ls -la ${{ parameters.workingDirectory }}/node_modules
     displayName: "Check working directory"
 
-  - script: npm run build -- --mode=${{ parameters.buildMode }}
+  - script: |
+      export PATH="$PWD/node_modules/.bin:$PATH"
+      npm run build -- --mode=${{ parameters.buildMode }}
     displayName: Build '${{ parameters.buildMode }}' version
     workingDirectory: ${{ parameters.workingDirectory }}
