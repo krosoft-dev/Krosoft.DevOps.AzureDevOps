@@ -123,7 +123,7 @@ stages:
 
                   
 
-                  CONFIG="$(Pipeline.Workspace)/deploy-config/${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml"
+                  CONFIG="$(Pipeline.Workspace)/deploy-config/$(basename "${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml")"
 
                   if [ ! -f "$CONFIG" ]; then
                     echo "❌ Fichier de config introuvable : $CONFIG"
