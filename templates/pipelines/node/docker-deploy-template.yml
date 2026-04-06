@@ -185,10 +185,10 @@ stages:
 
 
 
-                         # - ${{ if ne(variables.currentCheckUrl, 'null') }}:
-                    #     - template: ../../steps/check-url-template.yml
-                    #       parameters:
-                    #         url: $(currentCheckUrl)
+                # - ${{ if ne(variables.currentCheckUrl, 'null') }}:
+          #     - template: ../../steps/check-url-template.yml
+          #       parameters:
+          #         url: $(currentCheckUrl)
 
 # stages:
 #   - stage: Build
