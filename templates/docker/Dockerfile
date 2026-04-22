@@ -6,6 +6,8 @@ ENV TZ=${TZ}
 
 ARG APP_BASE_PATH=/
 
+RUN apk add --no-cache wget
+
 COPY dist/ /usr/share/nginx/html
 COPY nginx.conf.template /tmp/nginx.conf.template
 RUN envsubst '$APP_BASE_PATH' < /tmp/nginx.conf.template > /etc/nginx/conf.d/default.conf
