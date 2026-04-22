@@ -4,34 +4,54 @@ parameters:
   - name: acceptableCodes
     type: object
     default: [200]
+  - name: retryCount
+    type: number
+    default: 6
+  - name: retryDelaySeconds
+    type: number
+    default: 10
 
 steps:
   - powershell: |
       $url = "${{ parameters.url }}"
-      Write-Host "Testing URL: $url"
+      $acceptableCodes = "${{ join(',', parameters.acceptableCodes) }}" -split ","
+      $maxRetries = ${{ parameters.retryCount }}
+      $delaySeconds = ${{ parameters.retryDelaySeconds }}
 
-      try {
-          $response = Invoke-WebRequest -Uri $url -UseBasicParsing -SkipHttpErrorCheck
-          
-          if ("${{ join(',', parameters.acceptableCodes) }}" -split "," -contains $response.StatusCode) {
-              Write-Host "URL returned acceptable HTTP code: $($response.StatusCode)"
-              
-              try {
-                  $jsonContent = $response.Content | ConvertFrom-Json
-                  Write-Host "JSON response:"
-                  Write-Host ($jsonContent | ConvertTo-Json -Depth 10)
+      Write-Host "Testing URL: $url (up to $maxRetries attempts, ${delaySeconds}s between retries)"
+
+      for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+          Write-Host "Attempt $attempt/$maxRetries..."
+          try {
+              $response = Invoke-WebRequest -Uri $url -UseBasicParsing -SkipHttpErrorCheck
+
+              if ($acceptableCodes -contains "$($response.StatusCode)") {
+                  Write-Host "URL returned acceptable HTTP code: $($response.StatusCode)"
+
+                  try {
+                      $jsonContent = $response.Content | ConvertFrom-Json
+                      Write-Host "JSON response:"
+                      Write-Host ($jsonContent | ConvertTo-Json -Depth 10)
+                  }
+                  catch {
+                      Write-Host "Response is not JSON"
+                  }
+                  exit 0
               }
-              catch {
-                  Write-Host "Response is not JSON"
+              else {
+                  Write-Host "Unexpected HTTP code: $($response.StatusCode)"
               }
           }
-          else {
-              Write-Host "##vso[task.complete result=SucceededWithIssues;]"
-              Write-Host "##vso[task.logissue type=warning]URL returned unexpected HTTP code: $($response.StatusCode)"
+          catch {
+              Write-Host "Failed to connect: $_"
+          }
+
+          if ($attempt -lt $maxRetries) {
+              Write-Host "Waiting ${delaySeconds}s before next attempt..."
+              Start-Sleep -Seconds $delaySeconds
           }
       }
-      catch {
-          Write-Host "##vso[task.complete result=SucceededWithIssues;]"
-          Write-Host "##vso[task.logissue type=warning]Failed to connect to URL: $_"
-      }
+
+      Write-Host "##vso[task.complete result=SucceededWithIssues;]"
+      Write-Host "##vso[task.logissue type=warning]URL $url did not return an acceptable code after $maxRetries attempts."
     displayName: "Test URL and check response"
