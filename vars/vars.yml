@@ -1,0 +1,11 @@
+variables:
+  # pipeline
+  poolName: "Azure Pipelines"
+
+  # build docker
+  basePath: "$(Build.SourcesDirectory)/$(Build.Repository.Name)"
+  templatesPath: "$(Build.SourcesDirectory)/templates"
+  remoteBasePath: "/apps"
+
+  # déploiement
+  deploy_network: traefik-network

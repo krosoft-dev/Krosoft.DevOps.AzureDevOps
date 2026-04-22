@@ -1,0 +1,19 @@
+server {
+    listen 80;
+    server_name _;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    location /health {
+        access_log off;
+        return 200 "ok";
+        add_header Content-Type text/plain;
+    }
+
+    location ${APP_BASE_PATH} {
+        alias /usr/share/nginx/html/;
+        index index.html;
+        try_files $uri ${APP_BASE_PATH}index.html;
+    }
+}

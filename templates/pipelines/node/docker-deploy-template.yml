@@ -1,0 +1,149 @@
+parameters:
+  - name: pool
+    type: object
+  - name: sshEndpointPrefix
+    type: string
+  - name: envVariablesFilePrefix
+    type: string
+    default: null
+  - name: environments
+    type: object
+  - name: targetFolder
+    type: string
+  - name: imageName
+    type: string
+  - name: nodeVersion
+    type: string
+
+stages:
+  - ${{ each env in parameters.environments }}:
+      - stage: Deploy_${{ replace(env,'-','_') }}_Stage
+        displayName: Deploy '${{ replace(env,'-','_') }}'
+        variables:
+          - ${{ if ne(parameters.envVariablesFilePrefix, 'null') }}:
+              - template: ${{ parameters.envVariablesFilePrefix }}-${{ lower(env) }}.yml@self
+        jobs:
+          - deployment: Deploy_${{ replace(env,'-','_') }}
+            displayName: "Build & Deploy"
+            pool:
+              name: ${{ parameters.pool }}
+            workspace:
+              clean: all
+            environment: ${{ replace(env,'-','_') }}
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - checkout: templates
+                      path: s/templates
+                    - checkout: self
+                    - template: ../../steps/resolve-basepath-template.yml
+                    - template: ../../steps/node/build-template.yml
+                      parameters:
+                        nodeVersion: ${{ parameters.nodeVersion }}
+                        workingDirectory: $(basePath)
+                        buildMode: ${{ lower(env) }}
+                        viteBase: $(deploy_path)
+
+                    - script: ls -la $(Build.SourcesDirectory)
+                      displayName: "Check sources directory"
+
+                    - script: ls -la $(basePath)/dist
+                      displayName: "Check working directory"
+
+                    - script: |
+                        mkdir -p /tmp/docker-build-context
+                        cp -r $(basePath)/dist                                        /tmp/docker-build-context/dist
+                        cp $(templatesPath)/templates/docker/Dockerfile               /tmp/docker-build-context/Dockerfile
+                        cp $(templatesPath)/templates/docker/nginx.conf.template      /tmp/docker-build-context/nginx.conf.template
+                      displayName: "Assemble docker build context"
+
+                    - script: |
+                        set -e
+
+                        # Chargement des variables depuis le .env du repo templates
+                        set -a
+                        source $(templatesPath)/templates/docker/.env
+                        set +a
+
+                        echo "→ NGINX_VERSION : $NGINX_VERSION"
+                        echo "→ TZ          : $TZ"
+
+                        docker build \
+                          --build-arg NGINX_VERSION="$NGINX_VERSION" \
+                          --build-arg TZ="$TZ" \
+                          --build-arg APP_BASE_PATH="$(deploy_path)" \
+                          -t ${{ parameters.imageName }}:$(Build.BuildId) \
+                          /tmp/docker-build-context
+
+                        mkdir -p /tmp/deploy
+                        docker save ${{ parameters.imageName }}:$(Build.BuildId) \
+                          | gzip > /tmp/deploy/${{ parameters.imageName }}.tar.gz
+                      displayName: "Docker build & save"
+
+                    - script: |
+                        set -e
+                        export IMAGE_NAME="${{ parameters.imageName }}"
+                        export BUILD_ID="$(Build.BuildId)"
+                        export ENV_NAME="${{ lower(env) }}"
+                        export DEPLOY_HOST="$(deploy_host)"
+                        export DEPLOY_PATH="$(deploy_path)"
+                        export DEPLOY_NETWORK="$(deploy_network)"
+
+                        envsubst < $(templatesPath)/templates/docker/docker-compose.template.yml \
+                          > /tmp/deploy/docker-compose.${{ lower(env) }}.yml
+
+                        echo "--- docker-compose.${{ lower(env) }}.yml ---"
+                        cat /tmp/deploy/docker-compose.${{ lower(env) }}.yml
+                      displayName: "Generate docker-compose.${{ lower(env) }}.yml"
+
+                    - task: SSH@0
+                      displayName: "Prepare target folder on server"
+                      inputs:
+                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
+                        runOptions: inline
+                        inline: |
+                          mkdir -p ${{ parameters.targetFolder }}
+                          chmod u+rwx ${{ parameters.targetFolder }}
+
+                    - task: CopyFilesOverSSH@0
+                      displayName: "Transfer files to server"
+                      inputs:
+                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
+                        sourceFolder: /tmp/deploy
+                        contents: |
+                          ${{ parameters.imageName }}.tar.gz
+                          docker-compose.${{ lower(env) }}.yml
+                        targetFolder: ${{ parameters.targetFolder }}
+                        cleanTargetFolder: false
+
+                    - task: SSH@0
+                      displayName: "Deploy ${{ env }} on server"
+                      inputs:
+                        sshEndpoint: ${{ parameters.sshEndpointPrefix }}${{ lower(env) }}
+                        runOptions: inline
+                        readyTimeout: "20000"
+                        failOnStdErr: false
+                        inline: |
+                          set -e
+
+                          TARGET_DIR="${{ parameters.targetFolder }}"
+
+                          echo "→ Chargement image Docker..."
+                          docker load < $TARGET_DIR/${{ parameters.imageName }}.tar.gz
+
+                          echo "→ Nettoyage archive..."
+                          rm -f $TARGET_DIR/${{ parameters.imageName }}.tar.gz
+
+                          echo "→ docker compose up..."
+                          docker-compose \
+                            -p ${{ parameters.imageName }}-${{ lower(env) }} \
+                            -f $TARGET_DIR/docker-compose.${{ lower(env) }}.yml \
+                            up -d --remove-orphans
+
+                          echo "Application déployée avec succès sur ${{ env }} !"
+
+                    - ${{ if ne(variables.check_url, 'null') }}:
+                        - template: ../../steps/check-url-template.yml
+                          parameters:
+                            url: ${{ variables.check_url }}
