@@ -17,10 +17,10 @@ steps:
   # - script: ls -la ${{ parameters.workingDirectory }}
   #   displayName: "Check working directory"
 
-  - task: NodeTool@0
+  - task: UseNode@1
     displayName: "Use Node.js ${{ parameters.nodeVersion }}"
     inputs:
-      versionSpec: ${{ parameters.nodeVersion }}
+      version: ${{ parameters.nodeVersion }}
 
   - script: npm ci --include=dev
     displayName: Install dependencies
