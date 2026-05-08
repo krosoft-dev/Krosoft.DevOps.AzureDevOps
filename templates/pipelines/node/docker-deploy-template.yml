@@ -136,10 +136,7 @@ stages:
                           rm -f $TARGET_DIR/${{ parameters.imageName }}.tar.gz
 
                           echo "→ docker compose up..."
-                          sudo docker compose \
-                            -p ${{ parameters.imageName }}-${{ lower(env) }} \
-                            -f $TARGET_DIR/docker-compose.${{ lower(env) }}.yml \
-                            up -d --remove-orphans
+                          sudo docker compose -p ${{ parameters.imageName }}-${{ lower(env) }} -f $TARGET_DIR/docker-compose.${{ lower(env) }}.yml up -d --remove-orphans
 
                           echo "Application déployée avec succès sur ${{ env }} !"
 
