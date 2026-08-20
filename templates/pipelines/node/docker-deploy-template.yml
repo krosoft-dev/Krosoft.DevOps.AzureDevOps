@@ -14,6 +14,16 @@ parameters:
     type: string
   - name: nodeVersion
     type: string
+  # Script npm de build et dossier qu'il produit — voir steps/node/build-template.yml.
+  - name: buildScript
+    type: string
+    default: "build"
+  - name: passViteArgs
+    type: boolean
+    default: true
+  - name: outputDir
+    type: string
+    default: "dist"
 
 stages:
   - ${{ each env in parameters.environments }}:
@@ -44,16 +54,18 @@ stages:
                         workingDirectory: $(basePath)
                         buildMode: ${{ lower(env) }}
                         viteBase: $(deploy_path)
+                        buildScript: ${{ parameters.buildScript }}
+                        passViteArgs: ${{ parameters.passViteArgs }}
 
                     - script: ls -la $(Build.SourcesDirectory)
                       displayName: "Check sources directory"
 
-                    - script: ls -la $(basePath)/dist
+                    - script: ls -la $(basePath)/${{ parameters.outputDir }}
                       displayName: "Check working directory"
 
                     - script: |
                         mkdir -p /tmp/docker-build-context
-                        cp -r $(basePath)/dist                                        /tmp/docker-build-context/dist
+                        cp -r $(basePath)/${{ parameters.outputDir }}                  /tmp/docker-build-context/dist
                         cp $(templatesPath)/templates/docker/Dockerfile               /tmp/docker-build-context/Dockerfile
                         cp $(templatesPath)/templates/docker/nginx.conf.template      /tmp/docker-build-context/nginx.conf.template
                       displayName: "Assemble docker build context"
