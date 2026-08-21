@@ -9,6 +9,15 @@ parameters:
   - name: viteBase
     type: string
     default: "/"
+  # Script npm à lancer. Par défaut `build` : le build applicatif vite.
+  - name: buildScript
+    type: string
+    default: "build"
+  # Les arguments --mode/--base ne valent que pour vite. Un autre builder
+  # (storybook…) les refuse : passer `false` pour l'appeler sans argument.
+  - name: passViteArgs
+    type: boolean
+    default: true
 
 steps:
   # - script: ls -la $(Build.SourcesDirectory)
@@ -29,6 +38,11 @@ steps:
   # - script: ls -la ${{ parameters.workingDirectory }}/node_modules
   #   displayName: "Check node_modules directory"
 
-  - script: npm run build -- --mode=${{ parameters.buildMode }} --base=${{ parameters.viteBase }}
-    displayName: Build '${{ parameters.buildMode }}' version
-    workingDirectory: ${{ parameters.workingDirectory }}
+  - ${{ if parameters.passViteArgs }}:
+      - script: npm run ${{ parameters.buildScript }} -- --mode=${{ parameters.buildMode }} --base=${{ parameters.viteBase }}
+        displayName: Build '${{ parameters.buildMode }}' version
+        workingDirectory: ${{ parameters.workingDirectory }}
+  - ${{ else }}:
+      - script: npm run ${{ parameters.buildScript }}
+        displayName: Build '${{ parameters.buildMode }}' version
+        workingDirectory: ${{ parameters.workingDirectory }}
