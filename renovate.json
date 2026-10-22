@@ -1,4 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>krosoft-dev/krosoft-tooling-renovate"]
+  "extends": ["github>krosoft-dev/krosoft-tooling-renovate"],
+  "customManagers": [
+    {
+      "description": "nginx version used by the docker template (passed as --build-arg NGINX_VERSION)",
+      "customType": "regex",
+      "managerFilePatterns": ["/^templates/docker/\\.env$/"],
+      "matchStrings": ["NGINX_VERSION=(?<currentValue>\\S+)"],
+      "depNameTemplate": "nginx",
+      "datasourceTemplate": "docker"
+    }
+  ]
 }
