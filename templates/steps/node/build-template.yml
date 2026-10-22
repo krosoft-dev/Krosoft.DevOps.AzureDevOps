@@ -21,6 +21,7 @@ steps:
     displayName: "Use Node.js ${{ parameters.nodeVersion }}"
     inputs:
       version: ${{ parameters.nodeVersion }}
+      checkLatest: true
 
   - script: npm ci --include=dev
     displayName: Install dependencies
