@@ -14,5 +14,5 @@ RUN envsubst '$APP_BASE_PATH' < /tmp/nginx.conf.template > /etc/nginx/conf.d/def
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget -qO- http://localhost/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --start-interval=2s \
+  CMD wget -qO- http://127.0.0.1/health || exit 1
